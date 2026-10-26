@@ -1,116 +1,134 @@
-# Wazuh SIEM — Threat Detection & Windows Security Monitoring Lab
+# Wazuh SIEM – Threat Detection and Windows Security Monitoring Lab
 
-![Wazuh](https://img.shields.io/badge/Wazuh-SIEM-1680C8?style=flat-square) ![Focus](https://img.shields.io/badge/Focus-Threat%20Detection-5A3EAB?style=flat-square) ![Environment](https://img.shields.io/badge/Environment-Home%20Lab-2B937C?style=flat-square)
+![Wazuh](https://img.shields.io/badge/Wazuh-SIEM-1680C8?style=flat-square) ![Focus](https://img.shields.io/badge/Focus-Threat%20Detection-5A3EAB?style=flat-square) ![Lab](https://img.shields.io/badge/Environment-Hands--on%20Lab-2B937C?style=flat-square)
 
-A hands-on cybersecurity lab exploring how **Wazuh SIEM** centralizes Windows security events, supports threat hunting, and surfaces alerts during a controlled **Remote Desktop Protocol (RDP) authentication test**.
+## Project Overview
 
-> **Scope:** This is an educational lab performed on systems under my control. The images document observed activity; an alert alone does not establish compromise or prove the exact cause of an event.
+This project demonstrates a hands-on cybersecurity lab using **Wazuh SIEM** to monitor Windows security events, investigate suspicious authentication activity, and analyze security alerts.
 
-## Project objectives
+I configured a Wazuh monitoring environment, connected a Windows endpoint, and performed a controlled **RDP authentication test using Hydra from Kali Linux** to explore how security events appear in the Wazuh dashboard.
 
-- Set up the Wazuh manager, indexer, and dashboard.
-- Register a Windows endpoint with a Wazuh agent and observe collected events.
-- Inspect authentication activity in the Wazuh Threat Hunting interface.
-- Run an authorized RDP login test with Hydra from Kali Linux.
-- Review firewall-drop alerts and security configuration assessment (SCA) findings.
+The lab also includes Windows Firewall monitoring, threat hunting, and Security Configuration Assessment (SCA).
 
-## Tools and environment
+## Project Objectives
 
-| Component | Role |
-| --- | --- |
-| **Wazuh manager, indexer & dashboard** | Centralized event processing, storage and visualization |
-| **Wazuh Windows agent** | Collects security events from a monitored Windows endpoint |
-| **Windows endpoint** | Monitored target for authentication and firewall events |
-| **Kali Linux** | Lab machine used for an authorized RDP authentication test |
-| **Hydra** | Command-line tool used in the controlled RDP login test |
-| **VMware Workstation** | Virtualized lab environment |
+- Configure and register a Windows endpoint with Wazuh SIEM.
+- Monitor endpoint activity through the Wazuh dashboard.
+- Simulate RDP authentication attempts using Kali Linux and Hydra.
+- Investigate Windows authentication events and security alerts.
+- Analyze Windows Firewall and security configuration findings.
 
-The screenshots show a Wazuh dashboard at a private lab address and an agent labeled `windows-host`. Private IP addresses are used for demonstration only.
+## Tools and Technologies
 
-## Lab architecture
+| Tool | Purpose |
+|---|---|
+| Wazuh SIEM | Security monitoring, alert detection, and event analysis |
+| Windows | Monitored endpoint and RDP testing |
+| Kali Linux | Security testing environment |
+| Hydra | RDP authentication testing |
+| VMware Workstation | Virtualized lab environment |
+| Ubuntu Linux | Wazuh manager hosting |
 
-The following is a **conceptual illustration** of the attacker, monitored endpoint and SIEM workflow. Exact machine-to-IP mappings and connection ports in the illustration should be verified against the final lab configuration.
+## Lab Architecture
 
-![Conceptual Wazuh SIEM lab architecture](diagrams/lab-architecture.png)
+![Wazuh SIEM Lab Architecture](diagrams/lab-architecture.png)
 
-**Flow:** Kali Linux performs authorized RDP authentication testing against the Windows lab endpoint → the Windows endpoint records activity → the Wazuh agent forwards relevant events → Wazuh manager processes them → events and alerts are reviewed in the dashboard.
+The lab uses a private VMware network with the following components:
 
-## Implementation and evidence
+- **Kali Linux:** `192.168.234.128`
+- **Windows RDP target:** `192.168.234.1`
+- **Wazuh Manager:** `192.168.234.130`
 
-### 1. Windows agent configuration and registration
+The Windows agent collects security events and forwards them to the Wazuh manager for centralized monitoring and investigation.
 
-The Windows Wazuh agent initially required an authentication key. I registered the `windows-host` endpoint with the Wazuh manager, configured the agent, and verified that the endpoint later appeared as active in the dashboard. Authentication keys shown during configuration have been concealed in the published screenshots.
+## Lab Implementation
 
-**Initial agent state — authentication key not yet imported**
+### 1. Windows Agent Configuration and Registration
 
-![Windows agent before authentication key import](screenshots/01-agent-initial-setup.png)
+I configured the Wazuh agent on Windows and registered it with the Wazuh manager.
 
-**Registration — agent added through the Wazuh manager**
+The screenshots show the initial agent configuration and registration of `windows-host` with Agent ID `001`.
 
-![Wazuh manage_agents registration](screenshots/02-agent-registration.png)
+![Initial Wazuh Agent Configuration](screenshots/01-agent-initial-state.png)
 
-**Agent configured — authentication key saved (agent stopped at capture time)**
+![Wazuh Agent Registration](screenshots/02-manager-agent-registration.png)
 
-![Windows agent after configuring authentication key](screenshots/03-agent-configured.png)
+### 2. Active Agent Monitoring
 
-### 2. Verify the monitored agent
+After completing the setup, the Wazuh dashboard displayed **one active agent**, confirming that endpoint monitoring was operational.
 
-The Wazuh overview reports **one active agent** at the time of capture.
+![Wazuh Active Agent](screenshots/03-active-agent-overview.png)
 
-![Wazuh overview displaying one active agent](screenshots/04-active-agent.png)
+### 3. Threat Hunting Dashboard
 
-### 3. Review the Threat Hunting dashboard
+I used the Wazuh Threat Hunting dashboard to explore security events and authentication activity.
 
-Wazuh's Threat Hunting dashboard displayed **637 total events**, including **30 authentication failures** and **6 authentication successes**, within the selected window. These figures describe the dashboard view and are not all attributed to the simulated attack.
+The dashboard displayed:
 
-![Wazuh Threat Hunting overview showing event counts](screenshots/05-threat-dashboard.png)
+- **637 security events**
+- **30 authentication failures**
+- **6 authentication successes**
 
-### 4. Conduct an authorized RDP authentication test
+![Wazuh Threat Hunting Dashboard](screenshots/04-threat-hunting-dashboard.png)
 
-I used Hydra from Kali Linux to test RDP authentication in the private lab. The screenshot shows the test result, with the recovered password obscured.
+### 4. RDP Authentication Testing with Hydra
 
-![Hydra RDP authentication test in Kali Linux](screenshots/06-attack-simulation.png)
+I performed a controlled RDP authentication test from Kali Linux against the Windows lab target using **Hydra**.
 
-### 5. Investigate authentication alerts
+The test included multiple login attempts and identified a valid credential combination for a lab test account.
 
-The Wazuh event view contains multiple Windows logon failures (**rule 60122**, level 5) and a remote logon detection referencing NTLM authentication (**rule 92657**, level 6). The remote-logon rule warns of a possible pass-the-hash technique; this does **not** independently prove that pass-the-hash occurred.
+![Hydra RDP Authentication Test](screenshots/05-hydra-rdp-test.png)
 
-![Wazuh authentication logon failures and remote logon detection](screenshots/07-authentication-alerts.png)
+### 5. Windows Authentication Event Analysis
 
-These events are consistent with authentication-monitoring activity, but proving a direct connection to an individual Hydra attempt requires correlating timestamps, endpoint records, and source addresses.
+I investigated Windows authentication activity in Wazuh following the RDP testing.
 
-### 6. Review Windows security configuration findings
+The event logs included:
 
-The Wazuh event view also showed Security Configuration Assessment (SCA) findings referencing the **CIS Microsoft Windows 11 Enterprise Benchmark v3.0.0**, including a score-below-30% summary. The screenshot demonstrates findings, not remediation.
+- **Rule 60122:** Windows logon failure – unknown user or incorrect password.
+- **Rule 92657:** Remote logon activity using NTLM authentication.
 
-![Windows CIS benchmark SCA findings in Wazuh](screenshots/08-security-assessment.png)
+These events provided practical experience in identifying and analyzing authentication-related security alerts.
 
-### 7. Examine firewall drop alerts
+![Windows Authentication Alerts](screenshots/06-windows-authentication-events.png)
 
-Wazuh reported `Multiple Firewall drop events from same source` (**rule 4151**, level 10) on the monitored endpoint. These are firewall alerts; without more event context, they should not automatically be attributed to the RDP test.
+### 6. Security Configuration Assessment (SCA)
 
-![Wazuh Windows firewall drop event alerts](screenshots/09-firewall-detection.png)
+I explored Wazuh's Security Configuration Assessment findings to understand how Windows security settings are evaluated against established benchmarks.
 
-## What I learned
+The monitoring results included findings based on the **CIS Microsoft Windows 11 Enterprise Benchmark v3.0.0**, including a security assessment score below 30%.
 
-- How Wazuh's main components work together to collect, analyze and display security events.
-- How to register and monitor a Windows endpoint using a Wazuh agent.
-- How to search and interpret authentication and firewall alerts in a SIEM.
-- Why a detection alert must be correlated with underlying evidence before drawing conclusions.
-- How SCA findings can identify configuration weaknesses that merit further investigation.
+![Wazuh Security Configuration Assessment](screenshots/07-sca-benchmark-findings.png)
 
-## Limitations and next steps
+### 7. Windows Firewall Alert Monitoring
 
-- This project documents a **lab demonstration**, not a production SOC deployment.
-- The screenshots do not establish alert-to-attack causation for every event.
-- Additional validation could include exporting redacted event details, documenting the relevant Windows Event IDs, and confirming endpoint and server network configuration.
-- A follow-up could document an improved detection rule or an investigation playbook, along with before-and-after testing.
+I also investigated Windows Firewall events collected by Wazuh.
 
-## Security and responsible use
+The dashboard displayed **five firewall-related events** associated with **Rule 4151 (Level 10)**, reporting multiple firewall drops from the same source.
 
-All tests were performed in an authorized private lab. Passwords and Wazuh enrollment/authentication keys must be removed from screenshots before public sharing, and any previously exposed active secrets should be rotated. Do not run credential attacks against systems without explicit permission.
+![Windows Firewall Security Alerts](screenshots/08-windows-firewall-drop-alerts.png)
+
+## Skills Demonstrated
+
+Through this project, I gained practical experience in:
+
+- Wazuh SIEM configuration and endpoint monitoring.
+- Wazuh agent registration and management.
+- Threat hunting and security event investigation.
+- Windows authentication log analysis.
+- RDP security testing using Kali Linux and Hydra.
+- Windows Firewall alert investigation.
+- Security Configuration Assessment using CIS benchmarks.
+- Understanding and interpreting security detection rules.
+
+## Conclusion
+
+This lab strengthened my practical understanding of **security monitoring, threat detection, and incident investigation using Wazuh SIEM**.
+
+By combining Windows endpoint monitoring with controlled authentication testing, I gained hands-on experience working with security alerts and investigating suspicious activity in a centralized SIEM environment.
 
 ---
 
-**Author:** [Khathera](https://github.com/Khathera)  
-**Project type:** Cybersecurity home lab · SIEM · Windows event monitoring · Threat hunting
+**Author:** [Khathera](https://github.com/Khathera)
+
+**Project Focus:** Cybersecurity | SIEM | Threat Hunting | Windows Security | Penetration Testing
