@@ -31,7 +31,7 @@ The screenshots show a Wazuh dashboard at a private lab address and an agent lab
 
 The following is a **conceptual illustration** of the attacker, monitored endpoint and SIEM workflow. Exact machine-to-IP mappings and connection ports in the illustration should be verified against the final lab configuration.
 
-![Conceptual Wazuh SIEM lab architecture](diagrams/lab-architecture.png)
+![Wazuh SIEM Lab Architecture](diagrams/Wazuh%20SIEM%20Lab%20Architecture%20Diagram.png)
 
 **Flow:** Kali Linux performs authorized RDP authentication testing against the Windows lab endpoint → the Windows endpoint records activity → the Wazuh agent forwards relevant events → Wazuh manager processes them → events and alerts are reviewed in the dashboard.
 
