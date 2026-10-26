@@ -31,7 +31,7 @@ The lab also includes Windows Firewall monitoring, threat hunting, and Security 
 
 ## Lab Architecture
 
-![Wazuh SIEM Lab Architecture](diagrams/lab-architecture.png)
+![Wazuh SIEM Lab Architecture](diagrams/arch)
 
 The lab uses a private VMware network with the following components:
 
