@@ -31,58 +31,65 @@ The screenshots show a Wazuh dashboard at a private lab address and an agent lab
 
 The following is a **conceptual illustration** of the attacker, monitored endpoint and SIEM workflow. Exact machine-to-IP mappings and connection ports in the illustration should be verified against the final lab configuration.
 
-![Wazuh SIEM Lab Architecture](diagrams/Wazuh%20SIEM%20Lab%20Architecture%20Diagram.png)
+![Conceptual Wazuh SIEM lab architecture](diagrams/lab-architecture.png)
 
 **Flow:** Kali Linux performs authorized RDP authentication testing against the Windows lab endpoint → the Windows endpoint records activity → the Wazuh agent forwards relevant events → Wazuh manager processes them → events and alerts are reviewed in the dashboard.
 
 ## Implementation and evidence
 
-### 1. Windows agent setup and registration
+### 1. Windows agent configuration and registration
 
-The lab included Wazuh agent configuration and registration. The screenshots capture agent setup and subsequent active monitoring. Authentication secrets have been redacted from public images.
+The Windows Wazuh agent initially required an authentication key. I registered the `windows-host` endpoint with the Wazuh manager, configured the agent, and verified that the endpoint later appeared as active in the dashboard. Authentication keys shown during configuration have been concealed in the published screenshots.
 
-| Agent setup | Registration |
-| --- | --- |
-| ![Wazuh agent configuration](screenshots/01-agent-configuration.png) | ![Agent registration](screenshots/02-agent-registration.png) |
+**Initial agent state — authentication key not yet imported**
 
-![Additional agent configuration evidence](screenshots/03-agent-configuration.png)
+![Windows agent before authentication key import](screenshots/01-agent-initial-setup.png)
 
-### 2. Verify the monitored environment
+**Registration — agent added through the Wazuh manager**
 
-The Wazuh overview displays an **active agent**, while the Threat Hunting dashboard shows incoming event data.
+![Wazuh manage_agents registration](screenshots/02-agent-registration.png)
 
-| Agent overview | Threat Hunting dashboard |
-| --- | --- |
-| ![Active agent in Wazuh](screenshots/04-active-agent.png) | ![Wazuh Threat Hunting dashboard](screenshots/05-threat-dashboard.png) |
+**Agent configured — authentication key saved (agent stopped at capture time)**
 
-In one captured Threat Hunting view, the dashboard displayed **637 total events**, including **30 authentication failures** and **6 authentication successes** in its selected time window. These are dashboard counts, not a claim that every event originated from the RDP test.
+![Windows agent after configuring authentication key](screenshots/03-agent-configured.png)
 
-### 3. Controlled RDP authentication test
+### 2. Verify the monitored agent
 
-From Kali Linux, Hydra was used against an RDP service **within the private lab environment**. The terminal screenshot records the test execution and result; credentials are redacted.
+The Wazuh overview reports **one active agent** at the time of capture.
 
-![Authorized Hydra RDP authentication test](screenshots/06-attack-simulation.png)
+![Wazuh overview displaying one active agent](screenshots/04-active-agent.png)
 
-### 4. Investigate authentication events
+### 3. Review the Threat Hunting dashboard
 
-The Wazuh event view shows Windows logon failures and a remote logon alert, including:
+Wazuh's Threat Hunting dashboard displayed **637 total events**, including **30 authentication failures** and **6 authentication successes**, within the selected window. These figures describe the dashboard view and are not all attributed to the simulated attack.
 
-- **Rule 60122:** `Logon Failure - Unknown user or bad password` (level 5 in the screenshot).
-- **Rule 92657:** A remote logon detection referencing NTLM authentication (level 6 in the screenshot). Its description raises a **possible** pass-the-hash concern; that wording is not proof that pass-the-hash occurred.
+![Wazuh Threat Hunting overview showing event counts](screenshots/05-threat-dashboard.png)
 
-![Wazuh authentication alerts](screenshots/07-authentication-alerts.png)
+### 4. Conduct an authorized RDP authentication test
 
-The event records provide useful evidence of authentication monitoring. Confirming one-to-one causation between a specific Hydra attempt and a specific Wazuh event would require reviewing the event details, timestamps, source address and associated Windows logon records.
+I used Hydra from Kali Linux to test RDP authentication in the private lab. The screenshot shows the test result, with the recovered password obscured.
 
-### 5. Review security configuration findings
+![Hydra RDP authentication test in Kali Linux](screenshots/06-attack-simulation.png)
 
-Wazuh's **Security Configuration Assessment (SCA)** output includes checks based on the **CIS Microsoft Windows 11 Enterprise Benchmark v3.0.0**. The screenshot shows a score-below-30% summary and individual benchmark findings; it does **not** demonstrate remediation.
+### 5. Investigate authentication alerts
 
-![Wazuh security configuration assessment findings](screenshots/08-security-assessment.png)
+The Wazuh event view contains multiple Windows logon failures (**rule 60122**, level 5) and a remote logon detection referencing NTLM authentication (**rule 92657**, level 6). The remote-logon rule warns of a possible pass-the-hash technique; this does **not** independently prove that pass-the-hash occurred.
 
-### Additional observation: firewall activity
+![Wazuh authentication logon failures and remote logon detection](screenshots/07-authentication-alerts.png)
 
-Other lab screenshots show **Wazuh rule 4151**, reporting `Multiple Firewall drop events from same source` at level 10. This is an observed firewall-alert scenario; without full event details, it should not be attributed to the RDP test with certainty.
+These events are consistent with authentication-monitoring activity, but proving a direct connection to an individual Hydra attempt requires correlating timestamps, endpoint records, and source addresses.
+
+### 6. Review Windows security configuration findings
+
+The Wazuh event view also showed Security Configuration Assessment (SCA) findings referencing the **CIS Microsoft Windows 11 Enterprise Benchmark v3.0.0**, including a score-below-30% summary. The screenshot demonstrates findings, not remediation.
+
+![Windows CIS benchmark SCA findings in Wazuh](screenshots/08-security-assessment.png)
+
+### 7. Examine firewall drop alerts
+
+Wazuh reported `Multiple Firewall drop events from same source` (**rule 4151**, level 10) on the monitored endpoint. These are firewall alerts; without more event context, they should not automatically be attributed to the RDP test.
+
+![Wazuh Windows firewall drop event alerts](screenshots/09-firewall-detection.png)
 
 ## What I learned
 
